@@ -6,16 +6,24 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import ThemeSwitcher from './components/ThemeSwitcher';
 import FeedbackModal from './components/FeedbackModal';
 import { toolsData } from './data/tools';
-import { Region, AiTool, Language, Theme } from './types';
+import { Region, AiTool, Language, Theme, FeedbackType } from './types';
 import { translations } from './i18n/locales';
 
 const App: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState('All');
+  
   const [searchQuery, setSearchQuery] = useState('');
   // Default to China region
   const [regionFilter, setRegionFilter] = useState<'ALL' | Region>(Region.CN);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  
+  // Feedback Modal State
+  const [feedbackState, setFeedbackState] = useState<{
+    isOpen: boolean;
+    type: FeedbackType;
+    toolName?: string;
+  }>({ isOpen: false, type: 'suggestion' });
+
   // Default to 'zh-CN'
   const [currentLang, setCurrentLang] = useState<Language>('zh-CN');
   // Default to 'midnight' theme
@@ -34,19 +42,30 @@ const App: React.FC = () => {
     }
   }, [currentTheme]);
 
+  const handleOpenFeedback = (type: FeedbackType = 'suggestion') => {
+    setFeedbackState({ isOpen: true, type });
+  };
+
+  const handleReportTool = (tool: AiTool) => {
+    setFeedbackState({ 
+      isOpen: true, 
+      type: 'report',
+      toolName: tool.translations?.[currentLang]?.name || tool.name
+    });
+  };
+
   // Filter Logic
   const filteredTools = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     
     return toolsData.filter(tool => {
-      // 1. Check Base English Fields (Name, Description, Tags)
+      // 1. Check Base Fields (Name, Description, Tags)
       const matchesBase = 
         tool.name.toLowerCase().includes(query) || 
         tool.description.toLowerCase().includes(query) ||
         tool.tags.some(tag => tag.toLowerCase().includes(query));
 
       // 2. Check ALL Available Translations (Global Search)
-      // This allows searching for "视频" (Video) even if the UI is set to English
       const matchesTranslations = tool.translations
         ? Object.values(tool.translations).some(trans => 
             (trans.name && trans.name.toLowerCase().includes(query)) ||
@@ -55,7 +74,10 @@ const App: React.FC = () => {
         : false;
       
       const matchesSearch = matchesBase || matchesTranslations;
+      
+      // Category Match
       const matchesCategory = activeCategory === 'All' || tool.category === activeCategory;
+      
       const matchesRegion = regionFilter === 'ALL' || tool.region === regionFilter;
 
       return matchesCategory && matchesSearch && matchesRegion;
@@ -63,16 +85,19 @@ const App: React.FC = () => {
   }, [activeCategory, searchQuery, regionFilter]);
 
   // Group by category if 'All' is selected for a sectioned view
-  const groupedTools = useMemo<Record<string, AiTool[]>>(() => {
-    if (activeCategory !== 'All') return { [activeCategory]: filteredTools };
-    
-    // Grouping
-    const groups: Record<string, AiTool[]> = {};
-    filteredTools.forEach(tool => {
-      if (!groups[tool.category]) groups[tool.category] = [];
-      groups[tool.category].push(tool);
-    });
-    return groups;
+  const displayGroups = useMemo<Record<string, AiTool[]>>(() => {
+    if (activeCategory === 'All') {
+        // Group by Main Category
+        const groups: Record<string, AiTool[]> = {};
+        filteredTools.forEach(tool => {
+            if (!groups[tool.category]) groups[tool.category] = [];
+            groups[tool.category].push(tool);
+        });
+        return groups;
+    } else {
+        // Single Category View - no sub grouping needed
+        return { [activeCategory]: filteredTools };
+    }
   }, [activeCategory, filteredTools]);
 
   return (
@@ -85,7 +110,7 @@ const App: React.FC = () => {
         isOpen={isSidebarOpen}
         onCloseMobile={() => setIsSidebarOpen(false)}
         currentLang={currentLang}
-        onOpenFeedback={() => setIsFeedbackOpen(true)}
+        onOpenFeedback={() => handleOpenFeedback('suggestion')}
       />
 
       {/* Main Content Area */}
@@ -188,8 +213,15 @@ const App: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-6 lg:p-10 scrollbar-thin">
           <div className="max-w-7xl mx-auto space-y-12">
             
+            {/* Header Text for Context */}
+            {activeCategory !== 'All' && (
+              <div className="mb-4">
+                 <h2 className="text-3xl font-bold text-skin-base">{(t.categories as any)[activeCategory]}</h2>
+              </div>
+            )}
+
             {/* Results Grid */}
-            {Object.keys(groupedTools).length === 0 ? (
+            {Object.keys(displayGroups).length === 0 ? (
               <div className="text-center py-20">
                 <div className="w-16 h-16 bg-skin-surface rounded-full flex items-center justify-center mx-auto mb-4 border border-skin-border">
                   <Search className="text-skin-dim" size={32} />
@@ -198,7 +230,7 @@ const App: React.FC = () => {
                 <p className="text-skin-muted mt-2">{t.tryAdjusting}</p>
                 
                 <button 
-                  onClick={() => setIsFeedbackOpen(true)}
+                  onClick={() => handleOpenFeedback('suggestion')}
                   className="mt-6 px-6 py-2.5 bg-skin-primary hover:bg-skin-primary-hover text-white rounded-xl font-medium transition-colors inline-flex items-center gap-2"
                 >
                   <PlusCircle size={18} />
@@ -207,29 +239,38 @@ const App: React.FC = () => {
               </div>
             ) : (
               <>
-                {(Object.entries(groupedTools) as [string, AiTool[]][]).map(([category, tools]) => (
-                  <section key={category} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="flex items-center gap-3 mb-6">
-                      <h2 className="text-2xl font-bold text-skin-base">{(t.categories as Record<string, string>)[category] || category}</h2>
-                      <div className="h-px bg-skin-border flex-1 ml-4"></div>
-                      <span className="text-xs text-skin-muted font-mono bg-skin-surface px-2 py-1 rounded border border-skin-border">
-                        {tools.length}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {tools.map(tool => (
-                        <ToolCard key={tool.id} tool={tool} currentLang={currentLang} />
-                      ))}
-                    </div>
-                  </section>
-                ))}
+                {(Object.entries(displayGroups) as [string, AiTool[]][]).map(([groupKey, tools]) => {
+                  let label = (t.categories as any)[groupKey] || groupKey;
+                  
+                  return (
+                    <section key={groupKey} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="flex items-center gap-3 mb-6">
+                        <h2 className="text-xl font-bold text-skin-base">{label}</h2>
+                        <div className="h-px bg-skin-border flex-1 ml-4"></div>
+                        <span className="text-xs text-skin-muted font-mono bg-skin-surface px-2 py-1 rounded border border-skin-border">
+                          {tools.length}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {tools.map(tool => (
+                          <ToolCard 
+                            key={tool.id} 
+                            tool={tool} 
+                            currentLang={currentLang} 
+                            onReport={handleReportTool}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  );
+                })}
 
                 {/* Bottom CTA for feedback when results are present */}
                 <div className="py-8 text-center border-t border-skin-border/50 mt-12">
-                  <p className="text-skin-muted text-sm mb-4">{t.feedback.subtitle}</p>
+                  <p className="text-skin-muted text-sm mb-4">{t.feedback.suggestion.subtitle}</p>
                   <button 
-                    onClick={() => setIsFeedbackOpen(true)}
+                    onClick={() => handleOpenFeedback('suggestion')}
                     className="text-skin-primary hover:text-skin-primary-hover text-sm font-medium hover:underline inline-flex items-center gap-1"
                   >
                     <span>{t.feedback.button}</span>
@@ -240,8 +281,12 @@ const App: React.FC = () => {
             )}
 
             {/* Footer */}
-            <div className="pt-6 border-t border-skin-border text-center text-skin-muted text-sm">
+            <div className="pt-6 pb-8 border-t border-skin-border text-center text-skin-muted text-sm flex flex-col gap-2">
               <p>&copy; {new Date().getFullYear()} {t.footer}</p>
+              <div>
+                <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-skin-base transition-colors">备案号：</a>
+                <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-skin-base transition-colors">晋ICP备2026000851号</a>
+              </div>
             </div>
           </div>
         </div>
@@ -249,8 +294,10 @@ const App: React.FC = () => {
 
       {/* Feedback Modal */}
       <FeedbackModal 
-        isOpen={isFeedbackOpen} 
-        onClose={() => setIsFeedbackOpen(false)} 
+        isOpen={feedbackState.isOpen} 
+        initialType={feedbackState.type}
+        initialToolName={feedbackState.toolName}
+        onClose={() => setFeedbackState(prev => ({ ...prev, isOpen: false }))} 
         currentLang={currentLang}
       />
     </div>
