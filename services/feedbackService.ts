@@ -33,21 +33,21 @@ export const generateEmailLink = (data: FeedbackSubmission, receiverEmail: strin
 
   switch (data.type) {
     case 'report':
-      subjectPrefix = "举报/纠错 (Report)";
+      subjectPrefix = "Report Issue (举报/纠错)";
       bodyIntro = "I would like to report an issue with a tool:";
       break;
     case 'general':
-      subjectPrefix = "反馈 (Feedback)";
-      bodyIntro = "I have some feedback for AI 小破村:";
+      subjectPrefix = "Feedback (反馈)";
+      bodyIntro = "I have some feedback for AI Nexus:";
       break;
     case 'suggestion':
     default:
-      subjectPrefix = "推荐工具 (Suggestion)";
-      bodyIntro = "I would like to suggest a new tool for AI 小破村:";
+      subjectPrefix = "Suggestion (推荐工具)";
+      bodyIntro = "I would like to suggest a new tool for AI Nexus:";
       break;
   }
 
-  const subject = encodeURIComponent(`[AI 小破村] ${subjectPrefix}: ${data.toolName || 'General'}`);
+  const subject = encodeURIComponent(`[AI Nexus] ${subjectPrefix}: ${data.toolName || 'General'}`);
   
   const body = encodeURIComponent(
 `${bodyIntro}

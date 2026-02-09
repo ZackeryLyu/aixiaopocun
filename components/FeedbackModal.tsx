@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Send, CheckCircle2, MessageSquarePlus, Mail, Flag, AlertTriangle, MessageCircle } from 'lucide-react';
+import { X, Send, CheckCircle2, MessageSquarePlus, Mail, AlertTriangle, MessageCircle } from 'lucide-react';
 import { Language, FeedbackSubmission, FeedbackType } from '../types';
 import { translations } from '../i18n/locales';
 import { submitFeedback, generateEmailLink } from '../services/feedbackService';
