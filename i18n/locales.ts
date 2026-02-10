@@ -2,7 +2,7 @@ import { ToolCategory, PricingModel } from '../types';
 
 export const translations = {
   'en': {
-    appTitle: "AI Nexus",
+    appTitle: "AI 小破村",
     directory: "Directory",
     searchPlaceholder: "Search for tools (e.g., 'video', 'chat')...",
     regionAll: "All",
@@ -374,7 +374,7 @@ export const translations = {
     }
   },
   'ja': {
-    appTitle: "AI Nexus (AIネクサス)",
+    appTitle: "AI 小破村",
     directory: "ディレクトリ",
     searchPlaceholder: "ツールを検索（例：'動画', 'チャット'）...",
     regionAll: "すべて",
@@ -498,7 +498,7 @@ export const translations = {
     }
   },
   'ko': {
-    appTitle: "AI Nexus (AI 넥서스)",
+    appTitle: "AI 小破村",
     directory: "디렉토리",
     searchPlaceholder: "도구 검색 (예: '비디오', '채팅')...",
     regionAll: "전체",
@@ -622,7 +622,7 @@ export const translations = {
     }
   },
   'es': {
-    appTitle: "AI Nexus",
+    appTitle: "AI 小破村",
     directory: "Directorio",
     searchPlaceholder: "Buscar herramientas...",
     regionAll: "Todo",
@@ -746,7 +746,7 @@ export const translations = {
     }
   },
   'fr': {
-    appTitle: "AI Nexus",
+    appTitle: "AI 小破村",
     directory: "Répertoire",
     searchPlaceholder: "Rechercher...",
     regionAll: "Tout",
@@ -870,7 +870,7 @@ export const translations = {
     }
   },
   'de': {
-    appTitle: "AI Nexus",
+    appTitle: "AI 小破村",
     directory: "Verzeichnis",
     searchPlaceholder: "Suchen...",
     regionAll: "Alle",
@@ -994,7 +994,7 @@ export const translations = {
     }
   },
   'it': {
-    appTitle: "AI Nexus",
+    appTitle: "AI 小破村",
     directory: "Elenco",
     searchPlaceholder: "Cerca...",
     regionAll: "Tutti",
